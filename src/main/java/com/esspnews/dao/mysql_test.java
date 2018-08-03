@@ -2,57 +2,71 @@ package com.esspnews.dao;
 
 import com.esspnews.utils.EsUtils;
 import org.elasticsearch.client.transport.TransportClient;
-
 import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 
 
-public class Dao {
-	
+
+
+public class mysql_test 
+{
 	private Connection conn;
 	
-	// Method 1: void getConnection() to connect to mysql
 	public void getConnection()
 	{
-		// connect to mysql
-        try {
+        try 
+        {
+        	// connect to mysql
             Class.forName("com.mysql.cj.jdbc.Driver");
             String user="root";
             String passwd="SoilWater66971025";
             String url="jdbc:mysql://localhost:3306/news?useSSL=false&serverTimezone=UTC";
             conn= DriverManager.getConnection(url,user,passwd);
-
-            if (conn!=null){
+            
+            if (conn!=null)
+            {
                 System.out.println("mysql連線成功!");
-            }else{
+                System.out.println(conn);
+            }// #if
+            else
+            {
                 System.out.println("mysql連線失敗!");
-            }
-        } catch (ClassNotFoundException e) {
+            }// #else
+        }// #try 
+        
+        catch (ClassNotFoundException e) 
+        {
             e.printStackTrace();
-        } catch (SQLException e) {
+        }//#catch 
+        
+        catch (SQLException e) 
+        {
             e.printStackTrace();
-        }
+        }//#catch
     }// #void
-	
-	
-	
-	
-	// Method 2: 
-	public void mysqlToEs(){
 
+	
+	
+	
+	
+	
+	public void mysqlToEs()
+	{
         String sql="SELECT * FROM news";
+        
+        // object to connect to ES
+        //TransportClient client= EsUtils.getSingleClient();
 
-        TransportClient client= EsUtils.getSingleClient();
-
-        try {
-            PreparedStatement pstm=conn.prepareStatement(sql);
+        try 
+        {
+            PreparedStatement pstm = conn.prepareStatement(sql);
 
             ResultSet resultSet=pstm.executeQuery();
 
             Map<String,Object> map=new HashMap<String, Object>();
-            while (resultSet.next()){
-
+            while (resultSet.next())
+            {
                 int nid=resultSet.getInt(1);
 
                 map.put("id",nid);
@@ -67,19 +81,32 @@ public class Dao {
 
                 map.put("postdate",postdatetime.substring(0,postdatetime.length()-2));
 
-
                 System.out.println(map);
-                client.prepareIndex("search_news","news",String.valueOf(nid))
-                        .setSource(map).execute().actionGet();
-
+                
+                //client.prepareIndex("spnews","news",String.valueOf(nid))
+                  //      .setSource(map).execute().actionGet();
             }
-        } catch (SQLException e) {
+        }// #try 
+        
+        catch (SQLException e) 
+        {
             e.printStackTrace();
         }
-    }
+    }// #void
 	
 	
 	
+	
+    // main() function
+	public static void main(String[] args) 
+	{
+		// TODO Auto-generated method stub
+		mysql_test my = new mysql_test();
+		my.getConnection();
+		//my.mysqlToEs();
+		
+		//TransportClient client= EsUtils.getSingleClient();
+		
+	}//#main
 
-
-}// #class
+}//#class

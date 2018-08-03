@@ -12,6 +12,8 @@ import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
+//import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.common.xcontent.ToXContentFragment;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -23,54 +25,65 @@ import java.util.ArrayList;
 import java.util.Map;
 
 
-@WebServlet(name = "/SearchNews", urlPatterns = "/SearchNews")
-public class SearchServlet extends HttpServlet{
-	
-	
-    @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) 
-                   throws ServletException, IOException {
 
+@WebServlet(name = "/SearchNews", urlPatterns = "/SearchNews")
+public class SearchServlet extends HttpServlet 
+{    
+	@Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) 
+    		throws ServletException, IOException 
+	{
         req.setCharacterEncoding("UTF-8");
-        String query = req.getParameter("query");
+        //String query = req.getParameter("query"); //Get the query
+        //String query = "¶ø¹B";
         System.out.println(query);
-        String pageNumStr=req.getParameter("pageNum");
+        String pageNumStr = req.getParameter("pageNum");
         int pageNum=1;
 
-        if (pageNumStr!=null&&Integer.parseInt(pageNumStr)>1){
+        if (pageNumStr!=null&&Integer.parseInt(pageNumStr)>1)
+        {
             pageNum=Integer.parseInt(pageNumStr);
-        }
+        }// #if
+        // call searchSpnews method
         searchSpnews(query, pageNum,req);
 
         req.setAttribute("queryBack", query);
         req.getRequestDispatcher("result.jsp").forward(req, resp);
-
-    }
-    
-    
-    private void searchSpnews(String query, int pageNum,HttpServletRequest req) {
-
+    } // #void doGet
+	
+	
+	
+	
+	
+	private void searchSpnews(String query, int pageNum,HttpServletRequest req) 
+	{
         long start = System.currentTimeMillis();
+        // Declare a object for connect ES
         TransportClient client = EsUtils.getSingleClient();
-        MultiMatchQueryBuilder multiMatchQuery = QueryBuilders
-                .multiMatchQuery(query, "title", "content");
+        
+        MultiMatchQueryBuilder multiMatchQuery = QueryBuilders      		
+                                                 .multiMatchQuery(query, "title", "content")
+                                                 .operator(Operator.AND);
+        
         HighlightBuilder highlightBuilder = new HighlightBuilder()
-                .preTags("<span style=\"color:red\">")
-                .postTags("</span>")
-                .field("title")
-                .field("content");
-
-        SearchResponse searchResponse = client.prepareSearch("spnews")
-                .setTypes("news")
-                .setQuery(multiMatchQuery)
-                .highlighter(highlightBuilder)
-                .setFrom((pageNum-1)*10)
-                .setSize(10)
-                .execute()
-                .actionGet();
+							                .preTags("<span style=\"color:red\">")
+							                .postTags("</span>")
+							                .field("title")
+							                .field("content");
+        // Search from ES index
+        SearchResponse searchResponse = client.prepareSearch("search_news")
+		                                      .setTypes("news")
+		                                      .setQuery(multiMatchQuery)
+								              .highlighter(highlightBuilder)
+								              .setFrom((pageNum-1)*10)
+								              .setSize(10)
+								              .execute()
+								              .actionGet();
 
         SearchHits hits = searchResponse.getHits();
+        
         ArrayList<Map<String, Object>> newslist = new ArrayList<Map<String, Object>>();
+        
         for (SearchHit hit : hits) {
             Map<String, Object> news = hit.getSourceAsMap();
 
@@ -99,26 +112,16 @@ public class SearchServlet extends HttpServlet{
         req.setAttribute("newslist", newslist);
         req.setAttribute("totalHits", hits.getTotalHits() + "");
         req.setAttribute("totalTime", (end - start) + "");
-    }
-
-
+    }// #void searchSpnews
+	
+	
+	
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) 
+    		throws ServletException, IOException 
+    {
         doGet(req, resp);
     }
-    
-    
-    
-    
-    
 	
 	
-	
-	
-
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-
-	}
-
-}
+}// #class
